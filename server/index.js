@@ -1,6 +1,6 @@
 import express from 'express';
 import cors from 'cors';
-import { authRouter } from './auth.js';
+import router from './src/api/router/index.js';
 
 const port = 3005;
 
@@ -10,7 +10,7 @@ app.use(cors());
 
 app.use(express.json());
 
-app.use("/auth", authRouter);
+app.use(router);
 
 app.listen(port, () => {
     console.log(`Server is running on port ${port}`);
