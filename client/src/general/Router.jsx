@@ -5,12 +5,9 @@ import { ProtectedRoute } from "./ProtectedRoute.jsx";
 
 import { RoutePaths } from "../static/RoutePaths.js";
 
-
-
 import { Home } from "../pages/Home.jsx";
 import { NotFound } from "../pages/NotFound.jsx";
-import { Login } from "../pages/Login.jsx";
-import { Register } from "../pages/Register.jsx";
+import { Welcome } from "../pages/Welcome.jsx";
 
 
 
@@ -27,18 +24,10 @@ export const Router = () => (
       }
     />
     <Route
-      path={"/login"}
+      path={RoutePaths.WELCOME}
       element={
         <Layout>
-          <Login />
-        </Layout>
-      }
-    />
-    <Route
-      path={"/register"}
-      element={
-        <Layout>
-          <Register />
+          <Welcome />
         </Layout>
       }
     />
