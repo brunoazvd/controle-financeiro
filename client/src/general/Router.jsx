@@ -1,22 +1,29 @@
 import { Route, Routes } from "react-router-dom";
 
 import { Layout } from "./Layout.jsx";
+import { ProtectedRoute } from "./ProtectedRoute.jsx";
 
 import { RoutePaths } from "../static/RoutePaths.js";
+
+
 
 import { Home } from "../pages/Home.jsx";
 import { NotFound } from "../pages/NotFound.jsx";
 import { Login } from "../pages/Login.jsx";
 import { Register } from "../pages/Register.jsx";
 
+
+
 export const Router = () => (
   <Routes>
     <Route
       path={RoutePaths.HOME}
       element={
-        <Layout>
-          <Home />
-        </Layout>
+        <ProtectedRoute>
+          <Layout>
+            <Home />
+          </Layout>
+        </ProtectedRoute>
       }
     />
     <Route
@@ -38,9 +45,11 @@ export const Router = () => (
     <Route
       path="*"
       element={
-        <Layout>
-          <NotFound />
-        </Layout>
+        <ProtectedRoute>
+          <Layout>
+            <NotFound />
+          </Layout>
+        </ProtectedRoute>
       }
     />
   </Routes>
