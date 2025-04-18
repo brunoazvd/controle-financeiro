@@ -1,12 +1,12 @@
 import { useSelector, useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { logout } from "../store/slices/authSlice";
+import { logout } from "../store/slices/userSlice";
 import { RoutePaths } from '../static/RoutePaths';
 
 export const Navbar = () => {
     const dispatch = useDispatch();
     const navigate = useNavigate();
-    const { user } = useSelector((state) => state.auth);
+    const { userData } = useSelector((state) => state.user);
 
     const handleLogout = () => {
         dispatch(logout());
@@ -14,7 +14,7 @@ export const Navbar = () => {
     }
 
     return (
-        user ? (
+        userData ? (
         <div className="bg-amber-400 flex w-full p-4 flex-row items-center justify-between">
             <p className="text-4xl">Website</p>
             <p 

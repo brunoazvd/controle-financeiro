@@ -3,7 +3,7 @@ import axios from 'axios';
 
 
 export const verifyToken = createAsyncThunk(
-    "auth/verifyToken",
+    "user/verifyToken",
     async(_, { rejectWithValue }) => {
         const token = localStorage.getItem("token");
         if (!token) return rejectWithValue("Token não encontrado.");
@@ -25,14 +25,19 @@ if (token) {
 }
 
 export const loginUser = createAsyncThunk(
-    "auth/loginUser",
+    "user/loginUser",
     async ({username, password}, { rejectWithValue }) => {
         try {
             const res = await axios.post("/auth/login", { username, password });
             const token = res.data.token;
             localStorage.setItem("token", token);
             axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-            return { token };
+            const userResponse = await axios.get(`/api/users/${res.data.userId}`);
+            return { 
+                token, 
+                id: res.data.userId, 
+                ...userResponse.data 
+            };
         } catch (error) {
             return rejectWithValue(error.response?.data?.message || "Falha no login.");
         }
@@ -40,24 +45,29 @@ export const loginUser = createAsyncThunk(
 );
 
 export const registerUser = createAsyncThunk(
-    "auth/registerUser",
+    "user/registerUser",
     async ({username, password}, { rejectWithValue }) => {
         try {
             const res = await axios.post("/auth/register", { username, password });
             const token = res.data.token;
             localStorage.setItem("token", token);
             axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-            return { token };
+            const userResponse = await axios.get(`/api/users/${res.data.userId}`);
+            return { 
+                token, 
+                id: res.data.userId, 
+                ...userResponse.data,
+            };
         } catch(error) {
             return rejectWithValue(error.response?.data?.message || "Falha no registro.");
         }
     }
 );
 
-const authSlice = createSlice({
-    name: "auth",
+const userSlice = createSlice({
+    name: "user",
     initialState: {
-        user: token ? { token } : null,
+        userData: token ? { token } : null,
         error: null,
         loading: true,
     },
@@ -65,7 +75,7 @@ const authSlice = createSlice({
         logout: (state) => {
             localStorage.removeItem("token");
             delete axios.defaults.headers.common["Authorization"];
-            state.user = null;
+            state.userData = null;
             state.error = null;
         },
         clearError: (state) => {
@@ -79,11 +89,11 @@ const authSlice = createSlice({
             })
             .addCase(verifyToken.fulfilled, (state, action) => {
                 state.loading = false;
-                state.user = action.payload;
+                state.userData = action.payload;
             })
             .addCase(verifyToken.rejected, (state) => {
                 state.loading = false;
-                state.user = null;
+                state.userData = null;
             })
             .addCase(loginUser.pending, (state) => {
                 state.loading = true;
@@ -91,7 +101,7 @@ const authSlice = createSlice({
             })
             .addCase(loginUser.fulfilled, (state, action) => {
                 state.loading = false;
-                state.user = action.payload;
+                state.userData = action.payload;
             })
             .addCase(loginUser.rejected, (state, action) => {
                 state.loading = false;
@@ -103,7 +113,7 @@ const authSlice = createSlice({
             })
             .addCase(registerUser.fulfilled, (state, action) => {
                 state.loading = false;
-                state.user = action.payload;
+                state.userData = action.payload;
             })
             .addCase(registerUser.rejected, (state, action) => {
                 state.loading = false;
@@ -112,5 +122,5 @@ const authSlice = createSlice({
     }
 })
 
-export const { logout, clearError } = authSlice.actions;
-export default authSlice.reducer;
+export const { logout, clearError } = userSlice.actions;
+export default userSlice.reducer;

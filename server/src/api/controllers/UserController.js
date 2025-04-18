@@ -11,7 +11,7 @@ export default {
             const hashedPassword = await bcrypt.hash(password, 10);
             const user = await UserService.createUser(username, hashedPassword);
             const token = jwt.sign({ userId: user.id }, secretKey);
-            res.json({ message: 'Usuário registrado com sucesso.', token });
+            res.json({ message: 'Usuário registrado com sucesso.', token, userId: user.id });
         } catch (error) {
             res.status(400).json({ error: true, message: error.message });
         }
@@ -32,7 +32,7 @@ export default {
             }
 
             const token = jwt.sign({ userId: user.id }, secretKey);
-            res.json({ token });
+            res.json({ token, userId: user.id });
         } catch (error) {
             res.status(400).json({ message: 'Erro ao autenticar usuário.' });
         }

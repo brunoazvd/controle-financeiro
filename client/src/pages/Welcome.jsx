@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { loginUser, registerUser, clearError } from '../store/slices/authSlice';
+import { loginUser, registerUser, clearError } from '../store/slices/userSlice';
 import { RoutePaths } from '../static/RoutePaths';
 
 export const Welcome = () => {
@@ -11,17 +11,17 @@ export const Welcome = () => {
   const [password, setPassword] = useState('');
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const { user, loading, error } = useSelector(state => state.auth);
+  const { userData, loading, error } = useSelector(state => state.user);
 
   useEffect(() => {
     dispatch(clearError())
   }, [dispatch])
 
   useEffect(() => {
-    if (user) {
+    if (userData) {
       navigate(RoutePaths.HOME);
     }
-  }, [user, navigate])
+  }, [userData, navigate])
 
   const handleSubmit = async (event) => {
     event.preventDefault();

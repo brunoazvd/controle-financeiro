@@ -4,13 +4,13 @@ import { Loading } from "../components/Loading.jsx";
 import { RoutePaths } from "../static/RoutePaths.js";
 
 export const ProtectedRoute = ({children}) => {
-    const { user, loading } = useSelector((state) => state.auth);
+    const { userData, loading } = useSelector((state) => state.user);
 
     if (loading) {
         return <Loading name="auth"/>
     }
 
-    if (!user) {
+    if (!userData) {
         return <Navigate to={RoutePaths.WELCOME} replace/>
     }
 

@@ -35,6 +35,9 @@ class UserService {
     async getUserById(id) {
         try {
             const user = await this.prisma.user.findUnique({
+                omit: {
+                    password: true,
+                },
                 where: {
                     id,
                 }
