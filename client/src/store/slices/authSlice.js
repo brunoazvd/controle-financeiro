@@ -1,6 +1,24 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from 'axios';
 
+
+export const verifyToken = createAsyncThunk(
+    "auth/verifyToken",
+    async(_, { rejectWithValue }) => {
+        const token = localStorage.getItem("token");
+        if (!token) return rejectWithValue("Token não encontrado.");
+        try {
+            axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+            await axios.get("/auth/verify");
+            return { token };
+        } catch (error) {
+            localStorage.removeItem("token");
+            delete axios.defaults.headers.common["Authorization"];
+            return rejectWithValue(error.response?.data?.message || "Falha na verificação do token.");
+        }
+    }
+)
+
 const token = localStorage.getItem("token");
 if (token) {
     axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
@@ -41,7 +59,7 @@ const authSlice = createSlice({
     initialState: {
         user: token ? { token } : null,
         error: null,
-        loading: false,
+        loading: true,
     },
     reducers: {
         logout: (state) => {
@@ -56,6 +74,17 @@ const authSlice = createSlice({
     },
     extraReducers: (builder) => {
         builder
+            .addCase(verifyToken.pending, (state) => {
+                state.loading = true;
+            })
+            .addCase(verifyToken.fulfilled, (state, action) => {
+                state.loading = false;
+                state.user = action.payload;
+            })
+            .addCase(verifyToken.rejected, (state) => {
+                state.loading = false;
+                state.user = null;
+            })
             .addCase(loginUser.pending, (state) => {
                 state.loading = true;
                 state.error = null;

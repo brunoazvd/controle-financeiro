@@ -64,4 +64,12 @@ export default {
             res.status(400).json({ error: true, message: error.message });
         }
     },
+
+    async verifyToken(req, res) {
+        try {
+            res.json({ valid: true, userId: req.user.userId });
+        } catch (error) {
+            res.status(401).json({ valid: false, message: 'Token inválido.' });
+        }
+    }
 }
