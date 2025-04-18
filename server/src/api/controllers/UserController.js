@@ -7,9 +7,9 @@ const secretKey = process.env.SECRET_KEY;
 export default {
     async createUser(req, res) {
         try {
-            const { email, password } = req.body;
+            const { username, password } = req.body;
             const hashedPassword = await bcrypt.hash(password, 10);
-            const user = await UserService.createUser(email, hashedPassword);
+            const user = await UserService.createUser(username, hashedPassword);
             const token = jwt.sign({ userId: user.id }, secretKey);
             res.json({ message: 'Usuário registrado com sucesso.', token });
         } catch (error) {
@@ -19,8 +19,8 @@ export default {
 
     async login(req, res) {
         try {
-            const { email, password } = req.body;
-            const user = await UserService.getUserByEmail(email);
+            const { username, password } = req.body;
+            const user = await UserService.getUserByUsername(username);
 
             if (!user) {
                 return res.status(401).json({ message: 'Usuário não encontrado.' });

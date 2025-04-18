@@ -5,11 +5,11 @@ class UserService {
         this.prisma = prisma;
     }
 
-    async createUser(email, password) {
+    async createUser(username, password) {
         try {
             const newUser = await this.prisma.user.create({
                 data: {
-                    email,
+                    username,
                     password,
                 }
             });
@@ -19,11 +19,11 @@ class UserService {
         }
     }
 
-    async getUserByEmail(email) {
+    async getUserByUsername(username) {
         try {
             const user = await this.prisma.user.findUnique({
                 where: {
-                    email,
+                    username,
                 }
             });
             return user;

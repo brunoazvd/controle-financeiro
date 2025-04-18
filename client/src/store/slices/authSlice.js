@@ -26,9 +26,9 @@ if (token) {
 
 export const loginUser = createAsyncThunk(
     "auth/loginUser",
-    async ({email, password}, { rejectWithValue }) => {
+    async ({username, password}, { rejectWithValue }) => {
         try {
-            const res = await axios.post("/auth/login", { email, password });
+            const res = await axios.post("/auth/login", { username, password });
             const token = res.data.token;
             localStorage.setItem("token", token);
             axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
@@ -41,9 +41,9 @@ export const loginUser = createAsyncThunk(
 
 export const registerUser = createAsyncThunk(
     "auth/registerUser",
-    async ({email, password}, { rejectWithValue }) => {
+    async ({username, password}, { rejectWithValue }) => {
         try {
-            const res = await axios.post("/auth/register", { email, password });
+            const res = await axios.post("/auth/register", { username, password });
             const token = res.data.token;
             localStorage.setItem("token", token);
             axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;

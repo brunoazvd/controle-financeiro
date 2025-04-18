@@ -7,7 +7,7 @@ import { RoutePaths } from '../static/RoutePaths';
 
 export const Welcome = () => {
   const [isLoginMode, setIsLoginMode] = useState(true);
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -25,12 +25,12 @@ export const Welcome = () => {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    isLoginMode ?  dispatch(loginUser({ email, password })) : dispatch(registerUser({ email, password }));
+    isLoginMode ?  dispatch(loginUser({ username, password })) : dispatch(registerUser({ username, password }));
   };
 
   const toggleMode = () => {
     setIsLoginMode(prev => !prev);
-    setEmail('');
+    setUsername('');
     setPassword('');
   }
 
@@ -43,11 +43,11 @@ export const Welcome = () => {
         <form onSubmit={handleSubmit}>
           <div>
             <input
-              type="email"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
+              type="text"
+              value={username}
+              onChange={(event) => setUsername(event.target.value)}
               className="w-full bg-slate-100 p-2 rounded-md mb-4"
-              placeholder="E-mail"
+              placeholder="Username"
               disabled={loading}
               required
             />
