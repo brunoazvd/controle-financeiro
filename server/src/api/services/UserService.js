@@ -38,6 +38,9 @@ class UserService {
                 omit: {
                     password: true,
                 },
+                include : {
+                    accounts: true
+                },
                 where: {
                     id,
                 }

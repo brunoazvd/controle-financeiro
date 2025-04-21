@@ -11,7 +11,7 @@ export default {
             const categories = await CategoryService.getAllCategories();
             res.json(categories);
         } catch (error) {
-            throw new Error(`Erro ao buscar categorias: ${error.message}`);
+            res.status(400).json({ error: true, message: error.message });
         }
     },
 
