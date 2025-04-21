@@ -2,6 +2,7 @@ import { Router } from 'express';
 
 import UserController from '../controllers/UserController.js';
 import CategoryController from '../controllers/CategoryController.js';
+import TransactionController from '../controllers/TransactionController.js';
 
 import authMiddleware from '../middleware/auth.js';
 
@@ -23,5 +24,11 @@ router.get("/api/categories", authMiddleware, CategoryController.getAll);
 router.post("/api/categories", authMiddleware, CategoryController.createCategory);
 router.delete("/api/categories/:id", authMiddleware, CategoryController.deleteCategory);
 router.put("/api/categories/:id", authMiddleware, CategoryController.updateCategory);
+
+// TRANSACTION ROUTES
+router.get("/api/transactions/:userId", authMiddleware, TransactionController.getUserTransactions);
+router.post("/api/transactions", authMiddleware, TransactionController.createTransaction);
+router.delete("/api/transactions/:id", authMiddleware, TransactionController.deleteTransaction);
+router.put("/api/transactions/:id", authMiddleware, TransactionController.updateTransaction);
 
 export default router;
