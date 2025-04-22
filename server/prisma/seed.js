@@ -1,7 +1,13 @@
-import { PrismaClient } from '@prisma/client';
+// prisma/seed.js
+import { PrismaClient } from '@prisma/client'
+import { subMonths, addMonths, addDays, startOfDay, endOfDay } from 'date-fns'
 import bcrypt from 'bcrypt';
 
-const prisma = new PrismaClient();
+const prisma = new PrismaClient()
+
+function gerarDiaAleatorio() {
+    return Math.floor(Math.random() * 21) - 10;
+}
 
 async function main() {
   const hashedPassword = await bcrypt.hash('teste', 10);
@@ -11,108 +17,176 @@ async function main() {
       username: 'teste',
       password: hashedPassword,
     },
-  });
+  })
 
-  const [contaBanco, contaCarteira] = await Promise.all([
-    prisma.account.create({
-      data: { name: 'Banco Inter', type: 'BANK', userId: user.id },
-    }),
-    prisma.account.create({
-      data: { name: 'Cartão de Crédito - Mercado Pago', type: 'CREDIT_CARD', userId: user.id },
-    }),
-  ]);
+  const categories = await prisma.category.createMany({
+    data: [
+      { name: 'Salário', type: 'INCOME', userId: user.id },
+      { name: 'Freelancer', type: 'INCOME', userId: user.id },
+      { name: 'Rendimentos', type: 'INCOME', userId: user.id },
+      { name: 'Reembolsos', type: 'INCOME', userId: user.id },
+      { name: 'Venda de Itens', type: 'INCOME', userId: user.id },
+      { name: 'Outros Recebimentos', type: 'INCOME', userId: user.id },
+      { name: 'Alimentação', type: 'EXPENSE', userId: user.id },
+      { name: 'Transporte', type: 'EXPENSE', userId: user.id },
+      { name: 'Moradia', type: 'EXPENSE', userId: user.id },
+      { name: 'Educação', type: 'EXPENSE', userId: user.id },
+      { name: 'Lazer', type: 'EXPENSE', userId: user.id },
+      { name: 'Saúde', type: 'EXPENSE', userId: user.id },
+      { name: 'Compras', type: 'EXPENSE', userId: user.id },
+      { name: 'Assinaturas', type: 'EXPENSE', userId: user.id },
+      { name: 'Impostos e Taxas', type: 'EXPENSE', userId: user.id },
+      { name: 'Doações', type: 'EXPENSE', userId: user.id },
+      { name: 'Outros Gastos', type: 'EXPENSE', userId: user.id },
+    ],
+  })
 
-  const categoriasData = [
-    // INCOME
-    { name: 'Salário', type: 'INCOME' },
-    { name: 'Freelancer', type: 'INCOME' },
-    { name: 'Rendimentos', type: 'INCOME' },
-    { name: 'Reembolsos', type: 'INCOME' },
-    { name: 'Venda de Itens', type: 'INCOME' },
-    { name: 'Outros Recebimentos', type: 'INCOME' },
+  const allCategories = await prisma.category.findMany({ where: { userId: user.id } })
+  const findCategory = name => allCategories.find(c => c.name === name)
 
-    // EXPENSE
-    { name: 'Alimentação', type: 'EXPENSE' },
-    { name: 'Transporte', type: 'EXPENSE' },
-    { name: 'Moradia', type: 'EXPENSE' },
-    { name: 'Educação', type: 'EXPENSE' },
-    { name: 'Lazer', type: 'EXPENSE' },
-    { name: 'Saúde', type: 'EXPENSE' },
-    { name: 'Compras', type: 'EXPENSE' },
-    { name: 'Assinaturas', type: 'EXPENSE' },
-    { name: 'Impostos e Taxas', type: 'EXPENSE' },
-    { name: 'Doações', type: 'EXPENSE' },
-    { name: 'Outros Gastos', type: 'EXPENSE' },
-  ];
+  const bankAccount = await prisma.account.create({
+    data: {
+      name: 'Conta Bancária',
+      type: 'BANK',
+      userId: user.id,
+    },
+  })
 
-  const categorias = await Promise.all(
-    categoriasData.map((cat) =>
-      prisma.category.create({
+  const creditAccount = await prisma.account.create({
+    data: {
+      name: 'Cartão de Crédito',
+      type: 'CREDIT_CARD',
+      userId: user.id,
+      closingDay: 10,
+      dueDay: 20,
+    },
+  })
+
+  const statementDates = [0, 1, 2].map(offset => {
+    const closingDay = 10
+    const dueDay = 20
+    const today = new Date()
+    const ref = addMonths(new Date(today.getFullYear(), today.getMonth(), closingDay), offset)
+    const startDate = new Date(ref)
+    startDate.setMonth(startDate.getMonth() - 1)
+    const endDate = new Date(ref)
+    const dueDate = new Date(endDate.getFullYear(), endDate.getMonth(), dueDay)
+    return { startDate, endDate, dueDate }
+  })
+
+  const statements = await Promise.all(
+    statementDates.map(d =>
+      prisma.creditCardStatement.create({
         data: {
-          name: cat.name,
-          type: cat.type,
-          userId: user.id,
+          accountId: creditAccount.id,
+          startDate: d.startDate,
+          endDate: d.endDate,
+          dueDate: d.dueDate,
         },
       })
     )
-  );
+  )
 
-  const agora = new Date();
-  const diasAtras = (dias) => new Date(agora.getTime() - dias * 24 * 60 * 60 * 1000);
+  const parent = await prisma.transaction.create({
+    data: {
+      description: 'Compra Parcelada: Notebook',
+      amount: 300,
+      type: 'EXPENSE',
+      date: new Date(),
+      accountId: creditAccount.id,
+      categoryId: findCategory('Compras').id,
+      userId: user.id,
+      installment: 0,
+      totalInstallments: 3,
+    },
+  })
 
-  const getCategoriaId = (name) =>
-    categorias.find((c) => c.name === name)?.id;
+  for (let i = 1; i <= 3; i++) {
+    await prisma.transaction.create({
+      data: {
+        description: `Parcelamento Notebook (${i}/3)`,
+        amount: 100,
+        type: 'EXPENSE',
+        date: addMonths(new Date(), i),
+        accountId: creditAccount.id,
+        categoryId: findCategory('Compras').id,
+        userId: user.id,
+        installment: i,
+        totalInstallments: 3,
+        installmentOf: parent.id,
+        statementId: statements[i - 1].id,
+      },
+    })
+  }
 
-  const transacoesData = [
-    // INCOME
-    { description: 'Salário Mensal', amount: 5000, type: 'INCOME', category: 'Salário', dias: 2 },
-    { description: 'Freelancer Site', amount: 1200, type: 'INCOME', category: 'Freelancer', dias: 6 },
-    { description: 'Venda de Notebook', amount: 1500, type: 'INCOME', category: 'Venda de Itens', dias: 10 },
-    { description: 'Cashback Cartão', amount: 50, type: 'INCOME', category: 'Rendimentos', dias: 3 },
-    { description: 'Reembolso Uber', amount: 70, type: 'INCOME', category: 'Reembolsos', dias: 7 },
-    { description: 'Recebimento Aleatório', amount: 250, type: 'INCOME', category: 'Outros Recebimentos', dias: 15 },
+  await prisma.recurringTransaction.create({
+    data: {
+      userId: user.id,
+      accountId: creditAccount.id,
+      categoryId: findCategory('Assinaturas').id,
+      description: 'Netflix',
+      amount: 39.90,
+      type: 'EXPENSE',
+      startDate: new Date(),
+      recurrenceRule: 'monthly',
+      nextOccurrence: addMonths(new Date(), 1),
+    },
+  })
 
-    // EXPENSE
-    { description: 'Supermercado', amount: 300, type: 'EXPENSE', category: 'Alimentação', dias: 1 },
-    { description: 'Almoço', amount: 45, type: 'EXPENSE', category: 'Alimentação', dias: 4 },
-    { description: 'Uber para reunião', amount: 38, type: 'EXPENSE', category: 'Transporte', dias: 5 },
-    { description: 'Gasolina', amount: 200, type: 'EXPENSE', category: 'Transporte', dias: 9 },
-    { description: 'Aluguel', amount: 1200, type: 'EXPENSE', category: 'Moradia', dias: 14 },
-    { description: 'Curso de Programação', amount: 350, type: 'EXPENSE', category: 'Educação', dias: 8 },
-    { description: 'Academia', amount: 90, type: 'EXPENSE', category: 'Saúde', dias: 11 },
-    { description: 'Netflix', amount: 55, type: 'EXPENSE', category: 'Assinaturas', dias: 12 },
-    { description: 'Compra Roupas', amount: 270, type: 'EXPENSE', category: 'Compras', dias: 13 },
-    { description: 'Cineminha', amount: 60, type: 'EXPENSE', category: 'Lazer', dias: 3 },
-    { description: 'Doação ONG', amount: 100, type: 'EXPENSE', category: 'Doações', dias: 6 },
-    { description: 'Multa de Trânsito', amount: 180, type: 'EXPENSE', category: 'Impostos e Taxas', dias: 16 },
-    { description: 'Gastos diversos', amount: 150, type: 'EXPENSE', category: 'Outros Gastos', dias: 17 },
-    { description: 'Remédio Farmácia', amount: 80, type: 'EXPENSE', category: 'Saúde', dias: 2 },
-  ];
+  await prisma.transaction.create({
+    data: {
+      description: 'Netflix',
+      amount: 39.90,
+      type: 'EXPENSE',
+      date: new Date(),
+      accountId: creditAccount.id,
+      categoryId: findCategory('Assinaturas').id,
+      userId: user.id,
+      statementId: statements[0].id,
+    },
+  })
 
-  await Promise.all(
-    transacoesData.map((t) =>
-      prisma.transaction.create({
-        data: {
-          description: t.description,
-          amount: t.amount,
-          type: t.type,
-          date: diasAtras(t.dias),
-          accountId: t.amount > 1000 ? contaBanco.id : contaCarteira.id,
-          categoryId: getCategoriaId(t.category),
-          userId: user.id,
-        },
-      })
-    )
-  );
+  const bankSpendingCategories = ['Alimentação', 'Transporte', 'Outros Gastos']
+  for (let i = 0; i < 5; i++) {
+    const cat = findCategory(bankSpendingCategories[i % bankSpendingCategories.length])
+    await prisma.transaction.create({
+      data: {
+        description: `Despesa bancária ${i + 1}`,
+        amount: (Math.random() * 100).toFixed(2),
+        type: 'EXPENSE',
+        date: addDays(new Date(), gerarDiaAleatorio()),
+        accountId: bankAccount.id,
+        categoryId: cat.id,
+        userId: user.id,
+      },
+    })
+  }
 
-  console.log('Seed populada com sucesso com categorias e 20 transações!');
+  const creditSpendingCategories = ['Moradia', 'Lazer', 'Saúde', 'Doações']
+  for (let i = 0; i < 9; i++) {
+    const cat = findCategory(creditSpendingCategories[i % creditSpendingCategories.length])
+    await prisma.transaction.create({
+      data: {
+        description: `Compra crédito ${i + 1}`,
+        amount: (Math.random() * 200).toFixed(2),
+        type: 'EXPENSE',
+        date: addDays(new Date(), gerarDiaAleatorio()),
+        accountId: creditAccount.id,
+        categoryId: cat.id,
+        userId: user.id,
+        statementId: statements[0].id,
+      },
+    })
+  }
+
+  console.log('Seed finalizado com sucesso.')
 }
 
 main()
-  .catch((e) => {
-    console.error(e);
-    process.exit(1);
+  .catch(e => {
+    console.error(e)
+    process.exit(1)
   })
   .finally(async () => {
-    await prisma.$disconnect();
-  });
+    await prisma.$disconnect()
+  })

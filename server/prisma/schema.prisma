@@ -20,46 +20,89 @@ enum AccountType {
 }
 
 model User {
-  id          String           @id @default(uuid())
-  username       String        @unique
-  password    String
-  accounts    Account[]     
-  categories  Category[]    
-  transactions Transaction[]
-  createdAt   DateTime      @default(now())
+  id             String         @id @default(uuid())
+  username       String         @unique
+  password       String
+  accounts       Account[]
+  categories     Category[]
+  transactions   Transaction[]
+  recurring      RecurringTransaction[]
+  createdAt      DateTime       @default(now())
 }
 
 model Account {
-  id          String           @id @default(uuid())
-  name        String
-  type        AccountType
-  user        User          @relation(fields: [userId], references: [id])
-  userId      String
-  transactions Transaction[]
-  createdAt   DateTime      @default(now())
+  id             String         @id @default(uuid())
+  name           String
+  type           AccountType
+  closingDay    Int?             
+  dueDay        Int?            
+  user           User           @relation(fields: [userId], references: [id])
+  userId         String
+  transactions   Transaction[]
+  statements     CreditCardStatement[]
+  recurringTransactitons RecurringTransaction[]
+  createdAt      DateTime       @default(now())
 }
 
 model Category {
-  id          String           @id @default(uuid())
-  name        String
-  type        TransactionType
-  user        User?         @relation(fields: [userId], references: [id])
-  userId      String?
+  id             String         @id @default(uuid())
+  name           String
+  type           TransactionType
+  user           User?          @relation(fields: [userId], references: [id])
+  userId         String?
+  transactions   Transaction[]
+  recurringTransactions RecurringTransaction[]
+  createdAt      DateTime       @default(now())
+}
+
+model Transaction {
+  id                  String         @id @default(uuid())
+  description         String
+  amount              Decimal        @db.Decimal(10, 2)
+  type                TransactionType
+  date                DateTime
+  account             Account        @relation(fields: [accountId], references: [id])
+  accountId           String
+  category            Category       @relation(fields: [categoryId], references: [id])
+  categoryId          String
+  user                User           @relation(fields: [userId], references: [id])
+  userId              String
+  createdAt           DateTime       @default(now())
+
+  installment         Int?           
+  totalInstallments   Int?           
+  installmentOf       String?
+  parentTransaction   Transaction?   @relation("Installments", fields: [installmentOf], references: [id])
+  installments        Transaction[]  @relation("Installments")
+
+  statementId         String?
+  statement           CreditCardStatement? @relation(fields: [statementId], references: [id])
+}
+
+model CreditCardStatement {
+  id          String        @id @default(uuid())
+  account     Account       @relation(fields: [accountId], references: [id])
+  accountId   String
+  startDate   DateTime
+  endDate     DateTime
+  dueDate     DateTime
   transactions Transaction[]
   createdAt   DateTime      @default(now())
 }
 
-model Transaction {
-  id          String           @id @default(uuid())
-  description String
-  amount      Decimal       @db.Decimal(10, 2)
-  type        TransactionType
-  date        DateTime
-  account     Account       @relation(fields: [accountId], references: [id])
-  accountId   String
-  category    Category      @relation(fields: [categoryId], references: [id])
-  categoryId  String
-  user        User          @relation(fields: [userId], references: [id])
-  userId      String
-  createdAt   DateTime      @default(now())
+model RecurringTransaction {
+  id              String         @id @default(uuid())
+  user            User           @relation(fields: [userId], references: [id])
+  userId          String
+  account         Account        @relation(fields: [accountId], references: [id])
+  accountId       String
+  category        Category       @relation(fields: [categoryId], references: [id])
+  categoryId      String
+  description     String
+  amount          Decimal        @db.Decimal(10, 2)
+  type            TransactionType
+  startDate       DateTime
+  recurrenceRule  String         @default("monthly")
+  nextOccurrence  DateTime
+  createdAt       DateTime       @default(now())
 }

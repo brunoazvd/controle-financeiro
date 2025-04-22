@@ -12,6 +12,7 @@
   "license": "ISC",
   "description": "",
   "devDependencies": {
+    "date-fns": "^4.1.0",
     "prisma": "^6.6.0"
   },
   "dependencies": {
